@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Real-time Financial Analysis</title>
+  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+  <script src="{{ url_for('static', filename='js/socket-client.js') }}"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 40px;
+      background-color: #f9f9f9;
+    }
+
+    h1 {
+      font-size: 36px;
+      margin-bottom: 20px;
+    }
+
+    select, button {
+      padding: 10px;
+      font-size: 16px;
+      margin-right: 10px;
+    }
+
+    .card {
+      background-color: #fff;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      padding: 20px;
+      margin-top: 20px;
+    }
+
+    .card h3 {
+      margin-top: 0;
+      color: #007bff;
+    }
+
+    ul {
+      list-style: none;
+      padding-left: 0;
+    }
+
+    .green {
+      color: green;
+      margin-bottom: 5px;
+    }
+
+    .red {
+      color: red;
+      margin-bottom: 5px;
+    }
+
+    .metrics {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+    }
+
+    .metric-box {
+      flex: 1;
+      min-width: 250px;
+      border: 1px solid #ddd;
+      border-radius: 10px;
+      padding: 15px;
+      background-color: #fefefe;
+    }
+
+    .metric-box p {
+      margin: 6px 0;
+    }
+  </style>
+</head>
+<body>
+  <h1>Real-time Financial Analysis</h1>
+
+  <!-- Dropdown for company selection -->
+  <select id="companySelector">
+    <option value="">-- Select Company --</option>
+    {% for company in companies %}
+      <option value="{{ company }}">{{ company }}</option>
+    {% endfor %}
+  </select>
+  <button onclick="fetchCompany()">Analyze</button>
+
+  <!-- Financial Metrics Section -->
+  <div class="card">
+    <h2>📊 Financial Metrics</h2>
+    <div class="metrics">
+      <div class="metric-box">
+        <h3>Compounded Sales Growth</h3>
+        <p id="salesGrowth">--</p>
+      </div>
+      <div class="metric-box">
+        <h3>Compounded Profit Growth</h3>
+        <p id="profitGrowth">--</p>
+      </div>
+      <div class="metric-box">
+        <h3>Return on Equity (ROE)</h3>
+        <p id="roe">--</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Pros Section -->
+  <div class="card">
+    <h2>✅ Pros</h2>
+    <ul id="prosList"></ul>
+  </div>
+
+  <!-- Cons Section -->
+  <div class="card">
+    <h2>❌ Cons</h2>
+    <ul id="consList"></ul>
+  </div>
+
+  <!-- Socket.io Script -->
+  <script>
+    const socket = io();
+
+    function fetchCompany() {
+      const selected = document.getElementById("companySelector").value;
+      if (selected) {
+        // Clear previous data
+        document.getElementById("salesGrowth").innerText = "--";
+        document.getElementById("profitGrowth").innerText = "--";
+        document.getElementById("roe").innerText = "--";
+        document.getElementById("prosList").innerHTML = "";
+        document.getElementById("consList").innerHTML = "";
+
+        socket.emit("send_data", { company: selected });
+      }
+    }
+
+    socket.on("analysis_update", (data) => {
+      if (data.error) {
+        alert(data.error);
+        return;
+      }
+
+      // Format line-by-line display
+      const formatBlock = (text) => {
+        if (!text) return "--";
+        return text.split(',').map(part => `<div>${part.trim()}</div>`).join('');
+      };
+
+      document.getElementById("salesGrowth").innerHTML = formatBlock(data.compounded_sales_growth);
+      document.getElementById("profitGrowth").innerHTML = formatBlock(data.compounded_profit_growth);
+      document.getElementById("roe").innerHTML = formatBlock(data.roe);
+
+      const prosList = document.getElementById("prosList");
+      prosList.innerHTML = data.pros.map(p => `<li class="green">+ ${p.trim()}</li>`).join('');
+
+      const consList = document.getElementById("consList");
+      consList.innerHTML = data.cons.map(c => `<li class="red">– ${c.trim()}</li>`).join('');
+    });
+  </script>
+</body>
+</html>

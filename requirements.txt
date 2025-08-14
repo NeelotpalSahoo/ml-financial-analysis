@@ -1,0 +1,16 @@
+# Data & ML
+pandas==2.2.2
+scikit-learn==1.4.2
+
+# API Requests
+requests==2.31.0
+
+# MySQL Database
+mysql-connector-python==8.3.0
+
+# Web Framework (optional if using Flask API)
+Flask==2.3.3
+flask-cors==4.0.0
+mysql-connector-python
+eventlet
+flask-socketio

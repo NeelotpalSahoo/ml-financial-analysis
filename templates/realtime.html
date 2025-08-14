@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Real-time Financial Analysis</title>
+  <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="p-5">
+  <h2> Real-time Analysis Dashboard</h2>
+  <div id="analysisContainer" class="mt-4"></div>
+
+  <script>
+    const socket = io();
+
+    socket.on("update_analysis", (data) => {
+      const container = document.getElementById("analysisContainer");
+      container.innerHTML = "";
+
+      data.forEach(company => {
+        const card = `
+          <div class="card mb-3">
+            <div class="card-header bg-primary text-white">
+              Company ID: ${company.company_id}
+            </div>
+            <div class="card-body">
+              <h5 class="card-title">Pros</h5>
+              <p>${company.pros}</p>
+              <h5 class="card-title">Cons</h5>
+              <p>${company.cons}</p>
+            </div>
+          </div>`;
+        container.innerHTML += card;
+      });
+    });
+  </script>
+</body>
+</html>

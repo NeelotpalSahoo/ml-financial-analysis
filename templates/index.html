@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Real-time Financial Analysis</title>
+  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+</head>
+<body>
+  <h1>Real-time Financial Analysis</h1>
+
+  <!-- Dropdown for selecting company -->
+  <select id="companySelector">
+    <option value="">-- Select Company --</option>
+    {% for company in companies %}
+      <option value="{{ company }}">{{ company }}</option>
+    {% endfor %}
+  </select>
+  <button onclick="fetchCompany()">Analyze</button>
+
+  <!-- Optional manual input -->
+  <form id="stockForm">
+    <input type="text" id="symbol" placeholder="Or enter company symbol" />
+    <button type="submit">Analyze</button>
+  </form>
+
+  <!-- Output div -->
+  <h2>Results:</h2>
+  <div id="output" style="margin-top: 10px;"></div>
+
+  <script>
+    // Connect to Flask-SocketIO server
+    const socket = io();
+
+    // Dropdown selection
+    function fetchCompany() {
+      const selected = document.getElementById("companySelector").value;
+      if (selected) {
+        socket.emit("send_data", { company: selected });
+        document.getElementById("output").innerHTML = "🔄 Analyzing " + selected + "...";
+      }
+    }
+
+    // Manual form submission
+    document.getElementById("stockForm").addEventListener("submit", function(e) {
+      e.preventDefault();
+      const symbol = document.getElementById("symbol").value;
+      socket.emit("send_data", { company: symbol });
+      document.getElementById("output").innerHTML = "🔄 Analyzing " + symbol + "...";
+    });
+
+    // Receive updates
+    socket.on("analysis_update", (data) => {
+      const outputDiv = document.getElementById("output");
+      const pros = data.pros.map(p => `<li style="color: green;">+ ${p}</li>`).join('');
+      const cons = data.cons.map(c => `<li style="color: red;">– ${c}</li>`).join('');
+      outputDiv.innerHTML = `<ul>${pros}${cons}</ul>`;
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Real-time Financial Analysis</title>
+  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+  <style>
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background-color: #f5f7fa;
+  margin: 40px;
+  color: #333;
+}
+
+h1, h2 {
+  color: #202124;
+}
+
+select, button {
+  padding: 10px 16px;
+  font-size: 16px;
+  margin-bottom: 20px;
+}
+
+.card {
+  background: white;
+  border-radius: 12px;
+  padding: 25px;
+  margin-bottom: 25px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+}
+
+.metric-section {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  justify-content: space-between;
+}
+
+.metric-box {
+  flex: 1;
+  min-width: 250px;
+  background: #f8f9fc;
+  border: 1px solid #e3e6f0;
+  border-radius: 12px;
+  padding: 15px 20px;
+  font-size: 15px;
+}
+
+.metric-box strong {
+  display: block;
+  font-weight: 600;
+  font-size: 16px;
+  color: #007bff;
+  margin-bottom: 10px;
+}
+
+/* Pros and Cons Section */
+.pro-con-wrapper {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.pro-box {
+  background-color: #2dd4bf;
+  color: white;
+  padding: 20px;
+  border-radius: 12px;
+  flex: 1;
+  min-width: 280px;
+}
+
+.con-box {
+  background-color: #f43f5e;
+  color: white;
+  padding: 20px;
+  border-radius: 12px;
+  flex: 1;
+  min-width: 280px;
+}
+
+ul {
+  list-style: none;
+  padding-left: 0;
+}
+
+ul li::before {
+  content: "• ";
+  color: white;
+  font-weight: bold;
+  margin-right: 5px;
+}
+
+  </style>
+</head>
+<body>
+  <h1>Real-time Financial Analysis</h1>
+
+  <select id="companySelector">
+    <option value="">-- Select Company --</option>
+    {% for company in companies %}
+      <option value="{{ company }}">{{ company }}</option>
+    {% endfor %}
+  </select>
+  <button onclick="fetchCompany()">Analyze</button>
+
+  <div class="card">
+    <h2>📊 Financial Metrics</h2>
+    <div class="metric-section">
+      <div class="metric-box">
+        <strong>Compounded Sales Growth</strong><br>
+        3 Years: <span id="sales3Y"></span><br>
+        5 Years: <span id="sales5Y"></span><br>
+        10 Years: <span id="sales10Y"></span>
+      </div>
+      <div class="metric-box">
+        <strong>Compounded Profit Growth</strong><br>
+        3 Years: <span id="profit3Y"></span><br>
+        5 Years: <span id="profit5Y"></span><br>
+        10 Years: <span id="profit10Y"></span>
+      </div>
+      <div class="metric-box">
+        <strong>Return on Equity</strong><br>
+        3 Years: <span id="roe3Y"></span><br>
+        5 Years: <span id="roe5Y"></span><br>
+        10 Years: <span id="roe10Y"></span>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>✅ Pros</h2>
+    <ul id="prosList"></ul>
+  </div>
+
+  <div class="card">
+    <h2>❌ Cons</h2>
+    <ul id="consList"></ul>
+  </div>
+
+  <script>
+    const socket = io();
+
+    function fetchCompany() {
+      const selected = document.getElementById("companySelector").value;
+      if (selected) {
+        clearFields();
+        socket.emit("send_data", { company: selected });
+      }
+    }
+
+    function clearFields() {
+      document.querySelectorAll("span[id^='sales'], span[id^='profit'], span[id^='roe']").forEach(span => span.innerText = "");
+      document.getElementById("prosList").innerHTML = "";
+      document.getElementById("consList").innerHTML = "";
+    }
+
+    socket.on("analysis_update", (data) => {
+      if (data.error) {
+        alert(data.error);
+        return;
+      }
+
+      const sales = data.sales_growth;
+      const profit = data.profit_growth;
+      const roe = data.roe_growth;
+
+      document.getElementById("sales3Y").innerText = sales["3Y"];
+      document.getElementById("sales5Y").innerText = sales["5Y"];
+      document.getElementById("sales10Y").innerText = sales["10Y"];
+
+      document.getElementById("profit3Y").innerText = profit["3Y"];
+      document.getElementById("profit5Y").innerText = profit["5Y"];
+      document.getElementById("profit10Y").innerText = profit["10Y"];
+
+      document.getElementById("roe3Y").innerText = roe["3Y"];
+      document.getElementById("roe5Y").innerText = roe["5Y"];
+      document.getElementById("roe10Y").innerText = roe["10Y"];
+
+      document.getElementById("prosList").innerHTML = data.pros.map(p => `<li class="green">+ ${p}</li>`).join('');
+      document.getElementById("consList").innerHTML = data.cons.map(c => `<li class="red">– ${c}</li>`).join('');
+    });
+  </script>
+
+  <p id="predictedSales"></p>
+
+<script>
+function fetchCompanyPrediction(company) {
+  fetch(`/predict/${company}`)
+    .then(response => response.json())
+    .then(data => {
+      document.getElementById("predictedSales").innerText =
+        `📈 Expected Sales Growth: ${data.predicted_growth}%`;
+    });
+}
+</script>
+</body>
+</html>
